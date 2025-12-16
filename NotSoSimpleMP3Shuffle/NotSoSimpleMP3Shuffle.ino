@@ -34,13 +34,14 @@
 // Only certain pins can be used by the SPI hardware, so if you change
 // these be sure they are legal or the program will crash.
 // See: https://datasheets.raspberrypi.com/picow/PicoW-A4-Pinout.pdf
-const int _MISO = 19;  // AKA SPI RX
-const int _MOSI = 23;  // AKA SPI TX
-const int _CS = 5;
-const int _SCK = 18;
+const int _MISO = 27;//19;  // AKA SPI RX 
+const int _MOSI = 13;//23;  // AKA SPI TX
+const int _CS = 17;//5;
+const int _SCK = 14;//18;
 
 #ifdef ESP32
 #include <ESP32I2SAudio.h>
+SPIClass spiSD(HSPI);
 ESP32I2SAudio audio(26, 25, 22); // BCLK, LRCLK, DOUT (,MCLK)
 #else
 #include <PWMAudio.h>
@@ -105,8 +106,8 @@ void setup() {
   // Initialize the SD card
   bool sdInitialized = false;
 #ifdef ESP32
-  SPI.begin(_SCK, _MISO, _MOSI, _CS);
-  sdInitialized = SD.begin(_CS);
+  spiSD.begin(_SCK, _MISO, _MOSI, _CS);
+  sdInitialized = SD.begin(_CS, spiSD);
 #else
   if (_MISO == 0 || _MISO == 4 || _MISO == 16) {
     SPI.setRX(_MISO);
