@@ -139,6 +139,8 @@ void setup() {
   BMP.setGain(0.1f);
 
   mfrc522_setup();
+
+  pinMode(32, INPUT_PULLUP);
 }
 
 	typedef struct {
@@ -189,6 +191,21 @@ void loop() {
     if (len != 512) {
       f.close(); // Short reads == EOF
     }
+  }
+
+
+  // if card is read, play animal sound
+  // OR
+  // wait for button to be pressed to start the game
+  // when pressed, assign an animal play animal sound
+  // if pressed again, play sound
+  // whenever the correct card is read, play success. play try again if card is incorrect
+  // once correct, restart play
+
+    if (digitalRead(32) == LOW) {
+    Serial.println("BUTTON!!!");
+    // button pressed
+
   }
     if (!mfrc522.PICC_IsNewCardPresent()) {
         return;
