@@ -214,13 +214,17 @@ void loop() {
     if (animal_match) {
         Serial.print("Animal MATCH: ");
         Serial.println(fname_animal[a]);
+        fname = String(fname_animal[a]);
     } else {
         Serial.println("Animal did not MATCHED!");
     }
   if (!f && fname.length() > 0) {
-    auto x = random(mp3list.size());
-    f = SD.open(mp3list[x]);
-    Serial.printf("\r\n\r\nNow playing: %s\r\n", mp3list[x].c_str());
+    f = SD.open(fname);
+    if (!f) {
+        Serial.printf("\n Could not open %s", fname);
+        return;
+    }
+    Serial.printf("\r\n\r\nNow playing: %s\r\n", fname);
     processID3(f, id3Callback);
     auto p = f.position();
     p = p & ~511; // Ensure on a sector boundary, MP3 will resync appropriately
