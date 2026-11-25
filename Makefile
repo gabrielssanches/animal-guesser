@@ -3,9 +3,9 @@ ARDUINO_CLI ?= arduino-cli
 FQBN := esp32:esp32:esp32
 CORE_VERSION := 3.2.1
 
-SKETCH := firmware/guesser
+SKETCH := firmware/box
 LIBRARIES := $(abspath firmware/third_party)
-BUILD_DIR := $(abspath build/guesser)
+BUILD_DIR := $(abspath build/box)
 
 PORT ?= /dev/ttyUSB0
 

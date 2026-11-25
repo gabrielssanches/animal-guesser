@@ -1,0 +1,7 @@
+Software        Version
+BackgroundAudio 1.4.3
+MFRC522         1.4.12
+SPI             4.0.0
+SD              4.0.0
+FS              4.0.0
+esp32:esp32     4.0.0
