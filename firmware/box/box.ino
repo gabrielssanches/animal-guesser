@@ -44,7 +44,8 @@ static std::vector<String> mp3list;
 static File f;
 
 // Read buffer that's better off not in the stack due to its size
-static uint8_t filebuff[512];
+#define SOUND_FILE_BUFFER_SIZE 512
+static uint8_t filebuff[SOUND_FILE_BUFFER_SIZE];
 
 // Recursively scan the card and make a list of all MP3 files in all dirs
 static void scanDirectory(const char *dirname) {
@@ -111,7 +112,6 @@ void setup() {
 #ifdef BOX_DEBUG
     Serial.begin(115200);
     delay(100);
-    DEBUG_PRINTLN("Box starting...");
 #endif
 
     srand(ESP.getCycleCount());
@@ -137,21 +137,24 @@ void setup() {
     mfrc522_setup();
 
     pinMode(32, INPUT_PULLUP);
+
+    DEBUG_PRINTLN("Box starting...");
 }
 
-void loop() {
-    if (Serial.available()) {
-        f.close();  // Choose another
-        while (Serial.available()) {
-            Serial.read();
-        }
-    }
+// read tag
+// tag matches db entry
+// there can be more that one sound
+// choose random, play to the end
+// pause play if tag is removed
+// resume play if same tag is placed again
+// new identified tag plays random sound
 
+void loop() {
     // Stuff the buffer with as much as it will take, only doing full sector reads for performance
-    while (f && BMP.availableForWrite() > 512) {
-        int len = f.read(filebuff, 512);
+    while (f && BMP.availableForWrite() > SOUND_FILE_BUFFER_SIZE) {
+        int len = f.read(filebuff, SOUND_FILE_BUFFER_SIZE);
         BMP.write(filebuff, len);
-        if (len != 512) {
+        if (len != SOUND_FILE_BUFFER_SIZE) {
             f.close(); // Short reads == EOF
         }
     }
@@ -165,6 +168,9 @@ void loop() {
     if (!mfrc522.PICC_ReadCardSerial()) {
         return;
     }
+#ifdef BOX_DEBUG
+    mfrc522.PICC_DumpToSerial(&(mfrc522.uid));
+#endif
     String fname = "";
     int a;
     bool animal_match;
@@ -195,7 +201,7 @@ void loop() {
         }
         DEBUG_PRINTF("\r\n\r\nNow playing: %s\r\n", fname);
         auto p = f.position();
-        p = p & ~511; // Ensure on a sector boundary, MP3 will resync appropriately
+        p = p & ~(SOUND_FILE_BUFFER_SIZE -1); // Ensure on a sector boundary, MP3 will resync appropriately
         f.seek(p);
     }
 }
