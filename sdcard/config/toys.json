@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "toys": [
+    {
+      "id": "timon-and-pumbaa",
+      "category": "lion-king",
+      "uids": [
+        "04:AE:16:D2:EE:4A:80",
+        "04:AE:16:D2:EE:4A:81"
+      ],
+      "sounds": [
+        "hakuna_matata_low.mp3",
+        "be_prepared_low.mp3"
+      ]
+    }
+  ]
+}

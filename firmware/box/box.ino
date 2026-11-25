@@ -1,6 +1,7 @@
 #include <string.h>
 #include <vector>
 
+#include <ArduinoJson.h>
 #include <BackgroundAudio.h>
 #include <ESP32I2SAudio.h>
 #include <MFRC522.h>
@@ -108,6 +109,66 @@ const Uid card_animal[ANIMAL_MAX] = {
     [DOG] = { .size = 4, .uidByte = { 0x9C, 0x03, 0x6B, 0x05 } },
 };
 
+JsonDocument settings;
+JsonDocument toys;
+
+bool loadJson(const char* path, JsonDocument& doc)
+{
+    File file = SD.open(path, FILE_READ);
+    if (!file) {
+        Serial.printf("Cannot open %s\n", path);
+        return false;
+    }
+
+    doc.clear();
+    DeserializationError error =
+        deserializeJson(doc, file);
+
+    file.close();
+
+    if (error) {
+        Serial.printf("JSON error in %s: %s\n",
+                      path, error.c_str());
+        return false;
+    }
+
+    return true;
+}
+
+bool loadConfig()
+{
+    return
+        loadJson("/config/settings.json", settings) &&
+        loadJson("/config/toys.json", toys);
+}
+
+void readConfig()
+{
+    const char* language = settings["language"] | "pt";
+    int volume = settings["volume"] | 70;
+    int brightness = settings["brightness"] | 50;
+
+    Serial.printf("Language: %s\n", language);
+    Serial.printf("Volume: %d\n", volume);
+    Serial.printf("Brightness: %d\n", brightness);
+
+    for (JsonObject toy : toys["toys"].as<JsonArray>()) {
+        const char* id = toy["id"] | "";
+        const char* category = toy["category"] | "";
+
+        DEBUG_PRINTF("Toy: %s (%s)\n", id, category);
+        DEBUG_PRINTF("UIDs:\n");
+        for (const char* uid : toy["uids"].as<JsonArray>()) {
+            DEBUG_PRINTF("  UID: %s\n", uid);
+        }
+        DEBUG_PRINTF("Sounds:\n");
+        for (const char* sound : toy["sounds"].as<JsonArray>()) {
+            DEBUG_PRINTF("  > %s\n", sound);
+        }
+    }
+}
+
+
 void setup() {
 #ifdef BOX_DEBUG
     Serial.begin(115200);
@@ -139,6 +200,9 @@ void setup() {
     pinMode(32, INPUT_PULLUP);
 
     DEBUG_PRINTLN("Box starting...");
+
+    loadConfig();
+    readConfig();
 }
 
 // read tag
@@ -174,6 +238,21 @@ void loop() {
     String fname = "";
     int a;
     bool animal_match;
+    for (JsonObject toy : toys["toys"].as<JsonArray>()) {
+        for (const char* uid : toy["uids"].as<JsonArray>()) {
+            animal_match = true;
+            for (i = 0; i < mfrc522.uid.size; i++) {
+                if (mfrc522.uid.uidByte[i] != card_animal[a].uidByte[i]) {
+                    animal_match = false;
+                    break;
+                }
+            }
+        }
+        DEBUG_PRINTF("Sounds:\n");
+        for (const char* sound : toy["sounds"].as<JsonArray>()) {
+            DEBUG_PRINTF("  > %s\n", sound);
+        }
+    }
     for (a = CAT; a < ANIMAL_MAX; a++) {
         animal_match = true;
         for (byte i = 0; i < mfrc522.uid.size; i++) {
@@ -186,6 +265,7 @@ void loop() {
             break;
         }
     }
+
     if (animal_match) {
         Serial.print("Animal MATCH: ");
         DEBUG_PRINTLN(fname_animal[a]);
