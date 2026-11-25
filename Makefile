@@ -1,7 +1,7 @@
 ARDUINO_CLI ?= arduino-cli
 
 FQBN := esp32:esp32:esp32
-CORE_VERSION := 3.2.1
+CORE_VERSION := 4.0.0
 
 SKETCH := firmware/box
 LIBRARIES := $(abspath firmware/third_party)
@@ -12,6 +12,12 @@ PORT ?= /dev/ttyUSB0
 .PHONY: all build flash monitor clean versions install-core
 
 all: build
+
+setup:
+	arduino-cli config add board_manager.additional_urls \
+		https://espressif.github.io/arduino-esp32/package_esp32_index.json
+	arduino-cli core update-index
+	arduino-cli core install esp32:esp32@$(ESP32_CORE_VERSION)
 
 build:
 	$(ARDUINO_CLI) compile \
