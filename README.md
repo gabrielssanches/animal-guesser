@@ -147,3 +147,105 @@ make versions
 The two third-party libraries are stored in Git, preserving their exact source. Keep the core version pinned to **3.2.1** when rebuilding an older revision of the project. The normal (non-profile) `arduino-cli compile` command uses whichever ESP32 core is installed, so check `arduino-cli core list` before rebuilding on another machine.
 
 Build artifacts should stay out of version control (for example, add `/build/` to `.gitignore`).
+
+## Updating third-party libraries
+
+All third-party Arduino libraries are vendored under `firmware/third_party/` and tracked directly in Git using **Git subtree**.
+
+This means that building Box does not require installing these libraries through the Arduino IDE or Arduino Library Manager.
+
+### Libraries
+
+| Library | Upstream repository | Local directory |
+|---|---|---|
+| BackgroundAudio | https://github.com/earlephilhower/BackgroundAudio | `firmware/third_party/BackgroundAudio` |
+| MFRC522 | https://github.com/miguelbalboa/rfid | `firmware/third_party/MFRC522` |
+
+### 1. Find available releases
+
+List the available upstream tags:
+
+```bash
+git ls-remote --tags --refs \
+    https://github.com/earlephilhower/BackgroundAudio.git
+
+git ls-remote --tags --refs \
+    https://github.com/miguelbalboa/rfid.git
+```
+
+Check the upstream release notes and choose a specific, tested release rather than automatically using the latest commit.
+
+### 2. Update a library
+
+Run these commands from the repository root, on a clean working tree.
+
+**BackgroundAudio:**
+
+```bash
+git subtree pull \
+    --prefix=firmware/third_party/BackgroundAudio \
+    https://github.com/earlephilhower/BackgroundAudio.git \
+    <release-tag> --squash
+```
+
+**MFRC522:**
+
+```bash
+git subtree pull \
+    --prefix=firmware/third_party/MFRC522 \
+    https://github.com/miguelbalboa/rfid.git \
+    <release-tag> --squash
+```
+
+Replace `<release-tag>` with the desired upstream version, such as `1.4.12` for an applicable MFRC522 release.
+
+Update one library at a time to simplify troubleshooting.
+
+**Note:** These commands require the libraries to have originally been added using `git subtree`. If they were manually copied into the repository, migrate them to subtree management first or update their files manually.
+
+### 3. Compile and test
+
+After updating:
+
+```bash
+make build
+```
+
+To compile with debug logging:
+
+```bash
+make DEBUG=1 build
+```
+
+Flash the firmware and test the relevant functionality:
+
+- RFID detection and UID reading with custom NFC tags and amiibos.
+- SD-card initialization and file reading.
+- MP3 playback through the MAX98357A amplifier.
+- Audio playback interruption and restart.
+
+Pay particular attention to compatibility between BackgroundAudio and the installed ESP32 Arduino core.
+
+### 4. Commit the tested update
+
+`git subtree pull` creates Git history for the vendor update. After testing, check the repository history:
+
+```bash
+git log --oneline -5
+```
+
+Record the chosen release tag in the update commit or release documentation so the exact dependency versions remain easy to identify.
+
+Avoid modifying vendored library sources directly. Prefer making changes in the Box application. If a library requires a local patch, document it so future subtree updates can preserve or reapply it.
+
+### Arduino ESP32 core
+
+The ESP32 Arduino core is **not vendored** in `firmware/third_party/`. It is installed separately through Arduino CLI.
+
+To install a specific version:
+
+```bash
+arduino-cli core install esp32:esp32@<version>
+```
+
+Keep the version pinned in the project's build configuration or Makefile. Test core upgrades independently from third-party library upgrades to make compatibility issues easier to identify.
