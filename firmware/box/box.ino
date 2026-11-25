@@ -22,6 +22,16 @@
 #define SDCARD_SPI_SS               17
 #define SDCARD_SPI_SCK              14
 
+#ifdef BOX_DEBUG
+    #define DEBUG_PRINT(...)   Serial.print(__VA_ARGS__)
+    #define DEBUG_PRINTLN(...) Serial.println(__VA_ARGS__)
+    #define DEBUG_PRINTF(...)  Serial.printf(__VA_ARGS__)
+#else
+    #define DEBUG_PRINT(...)   ((void)0)
+    #define DEBUG_PRINTLN(...) ((void)0)
+    #define DEBUG_PRINTF(...)  ((void)0)
+#endif
+
 SPIClass spiSD(HSPI);
 MFRC522 mfrc522(MFRC522_SPI_SS, MFRC522_SPI_RESET);
 ESP32I2SAudio audio(AMPLIFIER_I2S_BCLK, AMPLIFIER_I2S_LRCLK, AMPLIFIER_I2S_DOUT);
@@ -59,9 +69,9 @@ static void scanDirectory(const char *dirname) {
       scanDirectory(sub.c_str());
     } else if (strstr(n.c_str(), ".mp3")) {
       mp3list.push_back(path);
-      Serial.printf("ADD: %s\n", path.c_str());
+      DEBUG_PRINTF("ADD: %s\n", path.c_str());
     } else {
-      Serial.printf("SKP: %s\n", path.c_str());
+      DEBUG_PRINTF("SKP: %s\n", path.c_str());
     }
     f.close();
   }
@@ -98,7 +108,11 @@ const Uid card_animal[ANIMAL_MAX] = {
 };
 
 void setup() {
+#ifdef BOX_DEBUG
     Serial.begin(115200);
+    delay(100);
+    DEBUG_PRINTLN("Box starting...");
+#endif
 
     srand(ESP.getCycleCount());
 
@@ -107,7 +121,7 @@ void setup() {
     spiSD.begin(SDCARD_SPI_SCK, SDCARD_SPI_MISO, SDCARD_SPI_MOSI, SDCARD_SPI_SS);
     sdInitialized = SD.begin(SDCARD_SPI_SS, spiSD);
     if (!sdInitialized) {
-        Serial.println("initialization failed!");
+        DEBUG_PRINTLN("initialization failed!");
         while (1) {
             delay(1000);
             ESP.restart();
@@ -143,7 +157,7 @@ void loop() {
     }
 
     if (digitalRead(32) == LOW) {
-        Serial.println("BUTTON!!!");
+        DEBUG_PRINTLN("BUTTON!!!");
     }
     if (!mfrc522.PICC_IsNewCardPresent()) {
         return;
@@ -168,18 +182,18 @@ void loop() {
     }
     if (animal_match) {
         Serial.print("Animal MATCH: ");
-        Serial.println(fname_animal[a]);
+        DEBUG_PRINTLN(fname_animal[a]);
         fname = String(fname_animal[a]);
     } else {
-        Serial.println("Animal did not MATCHED!");
+        DEBUG_PRINTLN("Animal did not MATCHED!");
     }
     if (!f && fname.length() > 0) {
         f = SD.open(fname);
         if (!f) {
-            Serial.printf("\n Could not open %s", fname);
+            DEBUG_PRINTF("\n Could not open %s", fname);
             return;
         }
-        Serial.printf("\r\n\r\nNow playing: %s\r\n", fname);
+        DEBUG_PRINTF("\r\n\r\nNow playing: %s\r\n", fname);
         auto p = f.position();
         p = p & ~511; // Ensure on a sector boundary, MP3 will resync appropriately
         f.seek(p);

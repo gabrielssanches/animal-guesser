@@ -7,7 +7,12 @@ SKETCH := firmware/box
 LIBRARIES := $(abspath firmware/third_party)
 BUILD_DIR := $(abspath build/box)
 
+DEBUG ?= 0
 PORT ?= /dev/ttyUSB0
+
+ifeq ($(DEBUG),1)
+    BUILD_FLAGS := --build-property compiler.cpp.extra_flags=-DBOX_DEBUG=1
+endif
 
 .PHONY: all build flash monitor clean versions install-core
 
@@ -24,6 +29,7 @@ build:
 		--fqbn $(FQBN) \
 		--libraries "$(LIBRARIES)" \
 		--build-path "$(BUILD_DIR)" \
+		$(BUILD_FLAGS) \
 		--verbose \
 		$(SKETCH)
 
