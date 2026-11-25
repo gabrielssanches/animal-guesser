@@ -98,31 +98,31 @@ const Uid card_animal[ANIMAL_MAX] = {
 };
 
 void setup() {
-  Serial.begin(115200);
+    Serial.begin(115200);
 
-  srand(ESP.getCycleCount());
+    srand(ESP.getCycleCount());
 
-  // Initialize the SD card
-  bool sdInitialized = false;
-  spiSD.begin(SDCARD_SPI_SCK, SDCARD_SPI_MISO, SDCARD_SPI_MOSI, SDCARD_SPI_SS);
-  sdInitialized = SD.begin(SDCARD_SPI_SS, spiSD);
-  if (!sdInitialized) {
-    Serial.println("initialization failed!");
-    while (1) {
-      delay(1000);
-      ESP.restart();
+    // Initialize the SD card
+    bool sdInitialized = false;
+    spiSD.begin(SDCARD_SPI_SCK, SDCARD_SPI_MISO, SDCARD_SPI_MOSI, SDCARD_SPI_SS);
+    sdInitialized = SD.begin(SDCARD_SPI_SS, spiSD);
+    if (!sdInitialized) {
+        Serial.println("initialization failed!");
+        while (1) {
+            delay(1000);
+            ESP.restart();
+        }
     }
-  }
 
-  scanDirectory("/");
+    scanDirectory("/");
 
-  // Start the background player
-  BMP.begin();
-  BMP.setGain(0.1f);
+    // Start the background player
+    BMP.begin();
+    BMP.setGain(0.1f);
 
-  mfrc522_setup();
+    mfrc522_setup();
 
-  pinMode(32, INPUT_PULLUP);
+    pinMode(32, INPUT_PULLUP);
 }
 
 void loop() {
